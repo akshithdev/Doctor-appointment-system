@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Patient Dashboard</h2>
+    
+    <!-- Appointments Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">My Appointments</h4>
+        </div>
+        <div class="card-body">
+            {% if appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Doctor</th>
+                            <th>Hospital</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in appointments %}
+                        <tr>
+                            <td>Dr. {{ appointment.doctor.user.name }}</td>
+                            <td>{{ appointment.hospital.name }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%I:%M %p') }}</td>
+                            <td>
+                                {% if appointment.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% elif appointment.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                                {% elif appointment.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if appointment.status == 'pending' %}
+                                <button class="btn btn-sm btn-danger" onclick="cancelAppointment({{ appointment.id }})">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No appointments found.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for handling appointment actions -->
+{% block scripts %}
+<script>
+function cancelAppointment(appointmentId) {
+    if (confirm('Are you sure you want to cancel this appointment?')) {
+        fetch('/cancel_appointment/' + appointmentId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                showToast('Appointment cancelled successfully', 'success');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showToast(data.message || 'Failed to cancel appointment', 'error');
+            }
+        })
+        .catch(function(error) {
+            showToast('Error cancelling appointment', 'error');
+        });
+    }
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-' + 
+        (type === 'success' ? 'success' : 'danger') + ' border-0';
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = 
+        '<div class="d-flex">' +
+            '<div class="toast-body">' +
+                message +
+            '</div>' +
+            '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
+        '</div>';
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', function() {
+        toast.remove();
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

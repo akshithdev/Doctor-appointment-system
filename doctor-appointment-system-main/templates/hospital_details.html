@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('list_hospitals') }}">Hospitals</a></li>
+            <li class="breadcrumb-item active">{{ hospital.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Hospital Details -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="card-title">{{ hospital.name }}</h2>
+            <p class="card-text">
+                <i class="fas fa-map-marker-alt me-2"></i>{{ hospital.address }}<br>
+                <i class="fas fa-phone me-2"></i>{{ hospital.phone }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Doctors Section -->
+    <h3 class="mb-4">Our Doctors</h3>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for doctor in hospital.doctors %}
+        <div class="col">
+            <div class="card h-100 doctor-card">
+                <div class="card-body">
+                    <h5 class="card-title">Dr. {{ doctor.name }}</h5>
+                    <p class="card-text">
+                        <strong><i class="fas fa-stethoscope me-2"></i>{{ doctor.specialization }}</strong><br>
+                        <i class="fas fa-clock me-2"></i>{{ doctor.experience }} years experience<br>
+                        <i class="fas fa-dollar-sign me-2"></i>Consultation Fee: ${{ "%.2f"|format(doctor.consultation_fee) }}
+                    </p>
+                    {% if session.get('user_type') == 'patient' %}
+                    <button class="btn btn-primary book-appointment-btn" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#appointmentModal{{ doctor.id }}"
+                            onclick="initializeModal({{ doctor.id }})">
+                        <i class="fas fa-calendar-plus me-2"></i>Book Appointment
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointment Modal for each doctor -->
+        <div class="modal fade appointment-modal" id="appointmentModal{{ doctor.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Book Appointment with Dr. {{ doctor.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" method="POST" class="appointment-form" onsubmit="return validateForm(this)">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="date{{ doctor.id }}" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date{{ doctor.id }}" name="date" required
+                                       min="{{ today.strftime('%Y-%m-%d') }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="time{{ doctor.id }}" class="form-label">Time</label>
+                                <input type="time" class="form-control" id="time{{ doctor.id }}" name="time" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="symptoms{{ doctor.id }}" class="form-label">Symptoms/Notes</label>
+                                <textarea class="form-control" id="symptoms{{ doctor.id }}" name="symptoms" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary book-btn">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Book Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default time range (9 AM to 5 PM)
+    const timeInputs = document.querySelectorAll('input[type="time"]');
+    timeInputs.forEach(function(input) {
+        input.setAttribute('min', '09:00');
+        input.setAttribute('max', '17:00');
+    });
+});
+
+function initializeModal(doctorId) {
+    const modal = document.getElementById(`appointmentModal${doctorId}`);
+    if (!modal) return;
+
+    const form = modal.querySelector('form');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    
+    // Reset form and button state
+    form.reset();
+    submitBtn.disabled = false;
+    spinner.classList.add('d-none');
+    
+    // Set min date to today
+    const dateInput = form.querySelector('input[type="date"]');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    
+    // Clear any previous event listeners
+    form.removeEventListener('submit', handleSubmit);
+    form.addEventListener('submit', handleSubmit);
+}
+
+function handleSubmit(event) {
+    const form = event.target;
+    if (!validateForm(form)) {
+        event.preventDefault();
+        return;
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    
+    submitBtn.disabled = true;
+    spinner.classList.remove('d-none');
+}
+
+function validateForm(form) {
+    const dateInput = form.querySelector('input[type="date"]');
+    const timeInput = form.querySelector('input[type="time"]');
+    
+    if (!dateInput || !timeInput) return false;
+    
+    const selectedDate = new Date(dateInput.value);
+    const selectedTime = timeInput.value;
+    
+    // Check if date is a weekend
+    const dayOfWeek = selectedDate.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        alert('Sorry, appointments are not available on weekends. Please select a weekday.');
+        return false;
+    }
+    
+    // Check if time is within business hours (9 AM to 5 PM)
+    const [hours] = selectedTime.split(':').map(Number);
+    if (hours < 9 || hours >= 17) {
+        alert('Please select a time between 9 AM and 5 PM.');
+        return false;
+    }
+    
+    return true;
+}
+</script>
+{% endblock %}

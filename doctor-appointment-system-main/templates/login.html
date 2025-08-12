@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link {% if user_type == 'patient' %}active{% endif %}" href="{{ url_for('login', user_type='patient') }}">Patient Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if user_type == 'doctor' %}active{% endif %}" href="{{ url_for('login', user_type='doctor') }}">Doctor Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if user_type == 'hospital_admin' %}active{% endif %}" href="{{ url_for('login', user_type='hospital_admin') }}">Hospital Login</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title mb-4">
+                        {% if user_type == 'patient' %}
+                            Patient Login
+                        {% elif user_type == 'doctor' %}
+                            Doctor Login
+                        {% else %}
+                            Hospital Login
+                        {% endif %}
+                    </h5>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    <form method="POST" action="{{ url_for('login', next=next) }}">
+                        <input type="hidden" name="user_type" value="{{ user_type }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                        {% if user_type == 'patient' %}
+                            <a href="{{ url_for('register', user_type='patient') }}" class="btn btn-outline-secondary">Register as Patient</a>
+                        {% elif user_type == 'hospital_admin' %}
+                            <a href="{{ url_for('register_hospital') }}" class="btn btn-outline-secondary">Register Hospital</a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<style>
+    .card {
+        border: none;
+        border-radius: 15px;
+    }
+    
+    .input-group-text {
+        background-color: transparent;
+        border-right: none;
+    }
+    
+    .form-control {
+        border-left: none;
+    }
+    
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #ced4da;
+    }
+    
+    .btn-primary {
+        border-radius: 30px;
+        padding: 12px;
+    }
+</style>
+{% endblock %}

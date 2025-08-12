@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Schedule Appointment</h3>
+                <form method="POST" id="appointmentForm">
+                    <div class="mb-3">
+                        <label for="doctor_id" class="form-label">Select Doctor</label>
+                        <select class="form-select" id="doctor_id" name="doctor_id" required>
+                            <option value="">Choose a doctor...</option>
+                            {% for doctor in doctors %}
+                            <option value="{{ doctor.id }}">{{ doctor.name }} - {{ doctor.specialization }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="patient_name" class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="patient_name" name="patient_name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="patient_email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="patient_email" name="patient_email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="patient_phone" class="form-label">Phone</label>
+                        <input type="tel" class="form-control" id="patient_phone" name="patient_phone" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="time" class="form-label">Available Time Slots</label>
+                        <select class="form-select" id="time" name="time" required disabled>
+                            <option value="">Select date and doctor first...</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus me-2"></i>Schedule Appointment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Upcoming Appointments</h3>
+                <div class="list-group">
+                    {% for appointment in appointments %}
+                    {% if appointment.status == 'scheduled' %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-1">{{ appointment.patient.name }}</h5>
+                                <p class="mb-1">
+                                    <i class="fas fa-user-md me-2"></i>{{ appointment.doctor.name }}
+                                </p>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-2"></i>{{ appointment.date.strftime('%B %d, %Y') }}
+                                    <i class="fas fa-clock ms-3 me-2"></i>{{ appointment.time.strftime('%I:%M %p') }}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('cancel_appointment', appointment_id=appointment.id) }}" 
+                               class="btn btn-danger btn-sm" 
+                               onclick="return confirm('Are you sure you want to cancel this appointment?')">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    function updateAvailableSlots() {
+        const doctorId = $('#doctor_id').val();
+        const date = $('#date').val();
+        const timeSelect = $('#time');
+        
+        if (doctorId && date) {
+            $.getJSON(`/get_available_slots/${doctorId}/${date}`, function(slots) {
+                timeSelect.empty();
+                timeSelect.append('<option value="">Choose a time slot...</option>');
+                slots.forEach(slot => {
+                    timeSelect.append(`<option value="${slot}">${slot}</option>`);
+                });
+                timeSelect.prop('disabled', false);
+            });
+        } else {
+            timeSelect.prop('disabled', true);
+            timeSelect.html('<option value="">Select date and doctor first...</option>');
+        }
+    }
+
+    $('#doctor_id, #date').change(updateAvailableSlots);
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    $('#date').attr('min', today);
+});
+</script>
+{% endblock %}

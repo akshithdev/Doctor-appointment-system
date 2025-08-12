@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Add Doctor to {{ hospital.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Doctor Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="invalid-feedback">
+                                Please enter doctor's name.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="invalid-feedback">
+                                Please enter a valid email address.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="invalid-feedback">
+                                Please enter a password.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="specialization" class="form-label">Specialization</label>
+                            <select class="form-select" id="specialization" name="specialization" required>
+                                <option value="">Select Specialization</option>
+                                <option value="Cardiologist">Cardiologist</option>
+                                <option value="Dermatologist">Dermatologist</option>
+                                <option value="Neurologist">Neurologist</option>
+                                <option value="Orthopedic">Orthopedic</option>
+                                <option value="Pediatrician">Pediatrician</option>
+                                <option value="Psychiatrist">Psychiatrist</option>
+                                <option value="General Physician">General Physician</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a specialization.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="experience" class="form-label">Experience (Years)</label>
+                            <input type="number" class="form-control" id="experience" name="experience" min="0" required>
+                            <div class="invalid-feedback">
+                                Please enter years of experience.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="consultation_fee" class="form-label">Consultation Fee (₹)</label>
+                            <input type="number" class="form-control" id="consultation_fee" name="consultation_fee" min="0" step="0.01" required>
+                            <div class="invalid-feedback">
+                                Please enter consultation fee.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="about" class="form-label">About/Bio</label>
+                            <textarea class="form-control" id="about" name="about" rows="3"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-md me-2"></i>Add Doctor
+                            </button>
+                            <a href="{{ url_for('hospital_dashboard') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+</script>
+{% endblock %}

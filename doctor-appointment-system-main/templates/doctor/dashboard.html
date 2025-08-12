@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Welcome Dr. {{ doctor.name }}</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Pending Appointments Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h4>Pending Appointments</h4>
+        </div>
+        <div class="card-body">
+            {% if pending_appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Symptoms</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in pending_appointments %}
+                        <tr>
+                            <td>{{ appointment.patient.name }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%I:%M %p') }}</td>
+                            <td>{{ appointment.symptoms }}</td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="updateAppointmentStatus('{{ appointment.id }}', 'approved')">Accept</button>
+                                <button class="btn btn-danger btn-sm" onclick="updateAppointmentStatus('{{ appointment.id }}', 'rejected')">Reject</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No pending appointments.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Today's Appointments Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4>Today's Appointments</h4>
+        </div>
+        <div class="card-body">
+            {% if todays_appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Time</th>
+                            <th>Symptoms</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in todays_appointments %}
+                        <tr>
+                            <td>{{ appointment.patient.name }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%I:%M %p') }}</td>
+                            <td>{{ appointment.symptoms }}</td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="updateAppointmentStatus('{{ appointment.id }}', 'completed')">Mark Complete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No appointments scheduled for today.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Upcoming Appointments Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h4>Upcoming Appointments</h4>
+        </div>
+        <div class="card-body">
+            {% if upcoming_appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Symptoms</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in upcoming_appointments %}
+                        <tr>
+                            <td>{{ appointment.patient.name }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%I:%M %p') }}</td>
+                            <td>{{ appointment.symptoms }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No upcoming appointments.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Completed Appointments Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h4>Completed Appointments</h4>
+        </div>
+        <div class="card-body">
+            {% if completed_appointments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Symptoms</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appointment in completed_appointments %}
+                        <tr>
+                            <td>{{ appointment.patient.name }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ appointment.appointment_time.strftime('%I:%M %p') }}</td>
+                            <td>{{ appointment.symptoms }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No completed appointments.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function updateAppointmentStatus(appointmentId, status) {
+    fetch('/update_appointment_status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            appointment_id: appointmentId,
+            status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the appointment status.');
+    });
+}
+</script>
+{% endblock %}

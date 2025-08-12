@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hospital Info -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">{{ hospital.name }}</h2>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ hospital.address }}
+                                <span class="mx-2">|</span>
+                                <i class="fas fa-phone me-2"></i>{{ hospital.contact }}
+                            </p>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('add_doctor_to_hospital', hospital_id=hospital.id) }}" class="btn btn-primary">
+                                <i class="fas fa-user-md me-2"></i>Add Doctor
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-md fa-3x mb-3 text-primary"></i>
+                    <h3>{{ doctors|length }}</h3>
+                    <p class="text-muted mb-0">Doctors</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-check fa-3x mb-3 text-success"></i>
+                    <h3>{{ pending_appointments|length }}</h3>
+                    <p class="text-muted mb-0">Pending Appointments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-calendar-alt fa-3x mb-3 text-info"></i>
+                    <h3>{{ today_appointments|length }}</h3>
+                    <p class="text-muted mb-0">Today's Appointments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                    <h3>{{ completed_appointments|length }}</h3>
+                    <p class="text-muted mb-0">Completed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Schedule -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">Today's Schedule</h4>
+                </div>
+                <div class="card-body">
+                    {% if today_appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Doctor</th>
+                                    <th>Patient</th>
+                                    <th>Contact</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in today_appointments %}
+                                <tr>
+                                    <td>{{ appointment.appointment_time.strftime('%I:%M %p') }}</td>
+                                    <td>Dr. {{ appointment.doctor.user.name }}</td>
+                                    <td>{{ appointment.patient.name }}</td>
+                                    <td>{{ appointment.patient.phone or 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if appointment.status == 'approved' else 'warning' if appointment.status == 'pending' else 'danger' }}">
+                                            {{ appointment.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if appointment.status == 'pending' %}
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-success" onclick="updateAppointmentStatus({{ appointment.id }}, 'approved')">
+                                                <i class="fas fa-check me-1"></i>Approve
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="updateAppointmentStatus({{ appointment.id }}, 'rejected')">
+                                                <i class="fas fa-times me-1"></i>Reject
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">No appointments scheduled for today.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Appointments -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">Pending Appointment Requests</h4>
+                </div>
+                <div class="card-body">
+                    {% if pending_appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Patient</th>
+                                    <th>Date & Time</th>
+                                    <th>Contact</th>
+                                    <th>Symptoms</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in pending_appointments %}
+                                <tr>
+                                    <td>Dr. {{ appointment.doctor.user.name }}</td>
+                                    <td>{{ appointment.patient.name }}</td>
+                                    <td>{{ appointment.appointment_time.strftime('%Y-%m-%d %I:%M %p') }}</td>
+                                    <td>{{ appointment.patient.phone or 'N/A' }}</td>
+                                    <td>{{ appointment.symptoms[:50] + '...' if appointment.symptoms and appointment.symptoms|length > 50 else appointment.symptoms or 'None provided' }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-success" onclick="updateAppointmentStatus({{ appointment.id }}, 'approved')">
+                                                <i class="fas fa-check me-1"></i>Approve
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="updateAppointmentStatus({{ appointment.id }}, 'rejected')">
+                                                <i class="fas fa-times me-1"></i>Reject
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">No pending appointment requests.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Doctor Form -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Add New Doctor</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('add_doctor') }}" method="POST">
+                <div class="mb-3">
+                    <label for="doctor_name" class="form-label">Doctor Name</label>
+                    <input type="text" class="form-control" id="doctor_name" name="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="doctor_email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="doctor_email" name="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="doctor_password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="doctor_password" name="password" required>
+                </div>
+                <div class="mb-3">
+                    <label for="doctor_specialization" class="form-label">Specialization</label>
+                    <input type="text" class="form-control" id="doctor_specialization" name="specialization" required>
+                </div>
+                <div class="mb-3">
+                    <label for="doctor_phone" class="form-label">Phone</label>
+                    <input type="tel" class="form-control" id="doctor_phone" name="phone" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Doctor</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- List of Doctors -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Hospital Doctors</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Specialization</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doctor in doctors %}
+                        <tr>
+                            <td>{{ doctor.name }}</td>
+                            <td>{{ doctor.email }}</td>
+                            <td>{{ doctor.specialization }}</td>
+                            <td>{{ doctor.phone }}</td>
+                            <td>
+                                <span class="badge bg-success">Active</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor List -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">Our Doctors</h4>
+                </div>
+                <div class="card-body">
+                    {% if doctors %}
+                    <div class="row">
+                        {% for doctor in doctors %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-user-md fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title text-center">Dr. {{ doctor.user.name }}</h5>
+                                    <p class="text-muted text-center mb-3">{{ doctor.specialization }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-briefcase me-1"></i>{{ doctor.experience }} years
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-dollar-sign me-1"></i>{{ doctor.consultation_fee }}
+                                        </small>
+                                    </div>
+                                    {% if doctor.about %}
+                                    <p class="card-text mt-3">{{ doctor.about }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">No doctors added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Doctor Modal -->
+<div class="modal fade" id="addDoctorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Doctor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_doctor_to_hospital', hospital_id=hospital.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Doctor's Name</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="tel" class="form-control" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Specialization</label>
+                        <input type="text" class="form-control" name="specialization" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Experience (years)</label>
+                        <input type="number" class="form-control" name="experience" required min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Consultation Fee</label>
+                        <input type="number" class="form-control" name="consultation_fee" required min="0" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">About</label>
+                        <textarea class="form-control" name="about" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Doctor</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateAppointmentStatus(appointmentId, status) {
+    if (!confirm('Are you sure you want to ' + status + ' this appointment?')) {
+        return;
+    }
+
+    fetch('/update_appointment_status/' + appointmentId + '/' + status, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.success) {
+            showToast('Appointment ' + status + ' successfully', 'success');
+            setTimeout(function() {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showToast(data.message || 'Failed to update appointment', 'error');
+        }
+    })
+    .catch(function(error) {
+        showToast('Error updating appointment', 'error');
+    });
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-' + 
+        (type === 'success' ? 'success' : 'danger') + ' border-0';
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    toast.innerHTML = 
+        '<div class="d-flex">' +
+            '<div class="toast-body">' +
+                message +
+            '</div>' +
+            '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>' +
+        '</div>';
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', function() {
+        toast.remove();
+    });
+}
+</script>
+{% endblock %}

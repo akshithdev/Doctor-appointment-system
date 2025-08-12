@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Book Appointment with Dr. {{ doctor.user.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Doctor Details:</h5>
+                        <p><strong>Specialization:</strong> {{ doctor.specialization }}</p>
+                        <p><strong>Experience:</strong> {{ doctor.experience }} years</p>
+                        <p><strong>Consultation Fee:</strong> ₹{{ doctor.consultation_fee }}</p>
+                        {% if doctor.about %}
+                        <p><strong>About:</strong> {{ doctor.about }}</p>
+                        {% endif %}
+                    </div>
+
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="appointment_date" class="form-label">Appointment Date</label>
+                            <input type="date" class="form-control" id="appointment_date" name="appointment_date" required
+                                   min="{{ today.strftime('%Y-%m-%d') }}">
+                            <div class="invalid-feedback">
+                                Please select a valid date.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="appointment_time" class="form-label">Preferred Time</label>
+                            <input type="time" class="form-control" id="appointment_time" name="appointment_time" required>
+                            <div class="invalid-feedback">
+                                Please select a valid time.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="symptoms" class="form-label">Symptoms/Reason for Visit</label>
+                            <textarea class="form-control" id="symptoms" name="symptoms" rows="3" required></textarea>
+                            <div class="invalid-feedback">
+                                Please describe your symptoms or reason for visit.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Book Appointment</button>
+                            <a href="{{ url_for('hospital_details', hospital_id=doctor.hospital_id) }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+
+// Set min time based on selected date
+document.getElementById('appointment_date').addEventListener('change', function() {
+    const dateInput = this.value;
+    const timeInput = document.getElementById('appointment_time');
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (dateInput === today) {
+        const now = new Date();
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        hours = hours < 10 ? '0' + hours : hours;
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        timeInput.min = hours + ':' + minutes;
+    } else {
+        timeInput.min = '';
+    }
+});
+</script>
+{% endblock %}
