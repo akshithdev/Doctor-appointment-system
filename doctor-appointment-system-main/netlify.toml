@@ -1,0 +1,14 @@
+# This Flask app requires a Python backend server
+# Netlify is not suitable for this type of application
+# Use Heroku, Render, or Railway instead
+
+# For reference, this app needs:
+# - Python runtime environment
+# - Flask server
+# - SQLite database support
+# - Session management
+
+# Recommended deployment:
+# 1. Use Heroku with the existing Procfile
+# 2. Or use Render.com for free Python hosting
+# 3. Or use Railway.app for modern deployment
